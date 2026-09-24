@@ -1,0 +1,4 @@
+backend/.env
+Hospital-Management-System/
+*.zip
+node_modules/

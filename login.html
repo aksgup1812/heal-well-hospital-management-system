@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heal Well Hospital | Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <script src="./assets/js/theme.js"></script>
+  <link href="./assets/css/style.css?v=3" rel="stylesheet">
+</head>
+<body class="login-page">
+  <button class="theme-toggle theme-toggle-floating" data-theme-toggle type="button"><i data-theme-icon class="fa-regular fa-moon"></i><span data-theme-label>Dark mode</span></button>
+  <main class="login-shell container">
+    <section class="row g-0 login-card shadow-lg">
+      <div class="col-lg-6 brand-panel d-none d-lg-flex"><div><a class="back-home" href="index.html"><i class="fa-solid fa-arrow-left"></i> Back to public website</a><div class="hospital-mark mb-4 p-0 overflow-hidden"><img src="./assets/images/heal-well-logo.png" class="w-100 h-100 object-fit-cover" alt="Heal Well Hospital logo"></div><p class="text-uppercase fw-semibold letter-space mb-2">Care that matters</p><h1>Heal Well<br>Hospital</h1><p class="lead mt-4">One simple workspace for better patient care, every day.</p><div class="brand-stat"><i class="fa-solid fa-shield-heart"></i> Secure local data management</div></div></div>
+      <div class="col-lg-6 form-panel"><div class="form-wrap"><a class="back-home d-lg-none" href="index.html"><i class="fa-solid fa-arrow-left"></i> Back to public website</a><div class="mobile-brand d-lg-none"><img src="./assets/images/heal-well-logo.png" alt="Heal Well Hospital logo"> Heal Well</div><div class="mb-4"><span class="eyebrow">SECURE PORTAL ACCESS</span><h2 class="mt-2">Sign in to your account</h2><p class="text-muted mb-0">Patients sign in with their phone number and password.</p></div><form id="loginForm" novalidate><div class="mb-3"><label for="username" class="form-label">Admin/doctor username or patient phone number</label><div class="input-group"><span class="input-group-text"><i class="fa-regular fa-user"></i></span><input id="username" class="form-control" type="text" autocomplete="username" placeholder="Enter username or phone number" required></div></div><div class="mb-2"><label for="password" class="form-label">Password</label><div class="input-group"><span class="input-group-text"><i class="fa-solid fa-lock"></i></span><input id="password" class="form-control" type="password" autocomplete="current-password" placeholder="Enter password" required><button id="togglePassword" class="btn btn-outline-secondary" type="button" aria-label="Show password"><i class="fa-regular fa-eye"></i></button></div></div><div id="loginAlert" class="alert alert-danger d-none mt-3 mb-0" role="alert"></div><button class="btn btn-primary w-100 mt-4 py-2 fw-semibold" type="submit">Sign In <i class="fa-solid fa-arrow-right ms-2"></i></button></form><p class="text-center text-muted small mt-3 mb-0">New patient? <a href="patient-register.html">Create your patient account</a></p><div class="demo-box mt-4"><strong><i class="fa-solid fa-circle-info me-1"></i> Demo accounts</strong><span><b>Administrator:</b> <code>admin</code> / <code>admin123</code></span><span><b>Doctor:</b> <code>doctor</code> / <code>doctor123</code></span><span><b>Demo patient phone:</b> <code>9999999999</code> / <code>patient123</code></span></div><p class="text-center text-muted small mt-4 mb-0">&copy; 2026 Heal Well Hospital. College Project.</p></div></div>
+    </section>
+  </main>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/login.js"></script>
+</body>
+</html>
