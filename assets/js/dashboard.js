@@ -9,7 +9,7 @@
   const $$ = (selector, parent = document) => [...parent.querySelectorAll(selector)];
   const storeKey = (name) => `hms_${name}`;
   const getRecords = (name) => JSON.parse(localStorage.getItem(storeKey(name)) || '[]');
-  const setRecords = (name, data) => localStorage.setItem(storeKey(name), JSON.stringify(data));
+  const setRecords = (name, data) => { localStorage.setItem(storeKey(name), JSON.stringify(data)); window.HMS_API?.notifySync?.(storeKey(name)); };
   const apiPaths = { patients: '/patients', doctors: '/doctors', appointments: '/appointments', emergency: '/emergency', laboratory: '/laboratory', pharmacy: '/medicines', billing: '/billing' };
   const isPatientUser = localStorage.getItem('hmsRole') === 'patient';
   const escapeHtml = (value = '') => String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
@@ -67,7 +67,7 @@
     setRecords('laboratory', [{ testId: 'LAB-1001', patient: 'Priya Nair', testName: 'Complete Blood Count', status: 'Completed', result: 'Normal' }]);
     setRecords('pharmacy', [{ medicineId: 'MED-1001', medicineName: 'Paracetamol 500mg', company: 'Cipla', price: '4.50', quantity: '120' }, { medicineId: 'MED-1002', medicineName: 'Amoxicillin 250mg', company: 'Sun Pharma', price: '12.00', quantity: '55' }]);
     setRecords('billing', [{ billId: 'BIL-1001', patient: 'Aarav Sharma', consultationFee: '500', medicineFee: '250', laboratoryFee: '350', total: '1100', createdAt: new Date().toLocaleDateString('en-IN') }]);
-    localStorage.setItem('hmsActivities', JSON.stringify([{ text: 'System initialized with demo records', icon: 'fa-circle-check', time: 'Just now' }]));
+    localStorage.setItem('hmsActivities', JSON.stringify([{ text: 'System initialized with demo records', icon: 'fa-circle-check', time: 'Just now' }])); window.HMS_API?.notifySync?.('hmsActivities');
     localStorage.setItem('hmsSeeded', 'true');
   }
 
@@ -81,7 +81,7 @@
   function logActivity(text, icon = 'fa-pen-to-square') {
     const activities = JSON.parse(localStorage.getItem('hmsActivities') || '[]');
     activities.unshift({ text, icon, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
-    localStorage.setItem('hmsActivities', JSON.stringify(activities.slice(0, 8)));
+    localStorage.setItem('hmsActivities', JSON.stringify(activities.slice(0, 8))); window.HMS_API?.notifySync?.('hmsActivities');
     renderNotifications();
   }
 
@@ -167,7 +167,10 @@
     if ((changed || (!available && !wasBackendAvailable)) && !adminModalOpen()) { renderCurrent(); renderNotifications(); }
   }
   function startLiveSync() {
-    window.addEventListener('storage', event => { if (!sharedDataKey(event.key)) return; if (event.key === 'hmsActivities') renderNotifications(); if (backendAvailable) refreshAdminData(); else if (!adminModalOpen()) renderCurrent(); });
+    const handleSync = ({ key }) => { if (!sharedDataKey(key)) return; if (key === 'hmsActivities') renderNotifications(); if (backendAvailable) refreshAdminData(); else if (!adminModalOpen()) renderCurrent(); };
+    window.hmsAdminSyncCleanup?.();
+    window.hmsAdminSyncCleanup = window.HMS_API?.subscribeSync?.(handleSync);
+    if (!window.hmsAdminSyncCleanup) window.addEventListener('storage', event => handleSync({ key: event.key }));
     clearInterval(window.hmsAdminSync);
     window.hmsAdminSync = setInterval(refreshAdminData, 5000);
   }

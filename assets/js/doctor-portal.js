@@ -10,12 +10,12 @@
   const isDemoDoctor = accountName.toLowerCase() === 'doctor';
 
   function escapeHtml(value = '') { return String(value).replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character])); }
-  function logPortalActivity(text, icon = 'fa-user-doctor') { const activities = JSON.parse(localStorage.getItem('hmsActivities') || '[]'); activities.unshift({ text, icon, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }); localStorage.setItem('hmsActivities', JSON.stringify(activities.slice(0, 8))); }
+  function logPortalActivity(text, icon = 'fa-user-doctor') { const activities = JSON.parse(localStorage.getItem('hmsActivities') || '[]'); activities.unshift({ text, icon, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }); localStorage.setItem('hmsActivities', JSON.stringify(activities.slice(0, 8))); window.HMS_API?.notifySync?.('hmsActivities'); }
   function timeValue(value) { return String(value || '').slice(0, 5); }
   function timeLabel(value) { const [hours, minutes] = timeValue(value).split(':').map(Number); if (!Number.isFinite(hours)) return '—'; return `${hours % 12 || 12}:${String(minutes).padStart(2, '0')} ${hours >= 12 ? 'PM' : 'AM'}`; }
   function dateLabel(value) { return value ? new Date(`${String(value).slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'; }
   function getRecords(name) { try { return JSON.parse(localStorage.getItem(`hms_${name}`) || '[]'); } catch (error) { return []; } }
-  function setRecords(name, data) { localStorage.setItem(`hms_${name}`, JSON.stringify(data)); }
+  function setRecords(name, data) { localStorage.setItem(`hms_${name}`, JSON.stringify(data)); window.HMS_API?.notifySync?.(`hms_${name}`); }
   function openModal(id) { const modal = $(`#${id}`); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); }
   function closeModal(id) { const modal = $(`#${id}`); modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); }
   function showAlert(selector, message, type = 'success') { const element = $(selector); element.textContent = message; element.dataset.type = type; element.classList.add('show'); }
@@ -143,5 +143,11 @@
   }
 
   bindEvents();
+  let syncRefreshTimer;
+  window.HMS_API?.subscribeSync?.(({ key }) => {
+    if (!['hms_appointments', 'hms_emergency', 'hms_doctors', 'hmsActivities'].includes(key)) return;
+    clearTimeout(syncRefreshTimer);
+    syncRefreshTimer = setTimeout(async () => { await loadSummary(); await loadAppointments(); await loadEmergencies(); }, 150);
+  });
   (async function initializeDoctorPortal() { await loadSummary(); await loadAppointments(); await loadEmergencies(); await loadSchedule(); }());
 })();

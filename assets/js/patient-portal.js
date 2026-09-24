@@ -12,12 +12,14 @@
 
   function escapeHtml(value = '') { return String(value).replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character])); }
   function getRecords(name) { try { return JSON.parse(localStorage.getItem(`hms_${name}`) || '[]'); } catch (error) { return []; } }
-  function setRecords(name, records) { localStorage.setItem(`hms_${name}`, JSON.stringify(records)); }
-  function logPortalActivity(text, icon = 'fa-calendar-check') { const activities = JSON.parse(localStorage.getItem('hmsActivities') || '[]'); activities.unshift({ text, icon, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }); localStorage.setItem('hmsActivities', JSON.stringify(activities.slice(0, 8))); }
+  function setRecords(name, records) { localStorage.setItem(`hms_${name}`, JSON.stringify(records)); window.HMS_API?.notifySync?.(`hms_${name}`); }
+  function logPortalActivity(text, icon = 'fa-calendar-check') { const activities = JSON.parse(localStorage.getItem('hmsActivities') || '[]'); activities.unshift({ text, icon, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }); localStorage.setItem('hmsActivities', JSON.stringify(activities.slice(0, 8))); window.HMS_API?.notifySync?.('hmsActivities'); }
   function today() { return new Date().toISOString().slice(0, 10); }
   function timeValue(value) { return String(value || '').slice(0, 5); }
   function timeLabel(value) { const [hours, minutes] = timeValue(value).split(':').map(Number); if (!Number.isFinite(hours)) return '—'; const suffix = hours >= 12 ? 'PM' : 'AM'; return `${hours % 12 || 12}:${String(minutes).padStart(2, '0')} ${suffix}`; }
   function dateLabel(value) { if (!value) return '—'; const date = new Date(`${String(value).slice(0, 10)}T00:00:00`); return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
+  function parseDisplayDate(value) { const match = String(value || '').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if (!match) return ''; const [, day, month, year] = match; const date = new Date(`${year}-${month}-${day}T00:00:00`); if (date.getFullYear() !== Number(year) || date.getMonth() + 1 !== Number(month) || date.getDate() !== Number(day)) return ''; return `${year}-${month}-${day}`; }
+  function displayDate(value) { const match = String(value || '').slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/); return match ? `${match[3]}/${match[2]}/${match[1]}` : ''; }
   function showAlert(message, type = 'success') { const alert = $('#patientBookingAlert'); alert.textContent = message; alert.dataset.type = type; alert.classList.add('show'); }
   function clearAlert() { $('#patientBookingAlert').classList.remove('show'); }
   function localAppointments() { const name = state.patient.name || profile.name || account.name; const phone = state.patient.phone || profile.phone || account.phone; return getRecords('appointments').filter((appointment) => appointment.patientAccountId === account.patientId || (appointment.patientPortal && (appointment.patient === name || appointment.phone === phone))); }
@@ -67,8 +69,10 @@
     };
     departmentSelect.addEventListener('change', renderDoctors);
     doctorSelect.addEventListener('change', loadAvailability);
-    $('#patientDate').min = today();
-    $('#patientDate').addEventListener('change', loadAvailability);
+    const dateInput = $('#patientDate');
+    dateInput.type = 'text'; dateInput.inputMode = 'numeric'; dateInput.maxLength = 10; dateInput.placeholder = 'DD/MM/YYYY'; dateInput.pattern = '\\d{2}/\\d{2}/\\d{4}'; dateInput.autocomplete = 'off'; dateInput.setAttribute('aria-label', 'Appointment date (DD/MM/YYYY)');
+    dateInput.closest('label').firstChild.textContent = 'Date (DD/MM/YYYY)';
+    dateInput.addEventListener('change', loadAvailability);
     renderDoctors();
   }
 
@@ -114,9 +118,11 @@
 
   async function loadAvailability() {
     const doctorReference = $('#patientDoctor').value;
-    const date = $('#patientDate').value;
+    const rawDate = $('#patientDate').value.trim();
+    const date = parseDisplayDate(rawDate);
     const slotsContainer = $('#appointmentSlots');
     state.selectedSlot = '';
+    if (rawDate && !date) { $('#slotStatus').textContent = 'Enter a valid date as DD/MM/YYYY.'; slotsContainer.innerHTML = '<div class="slot-placeholder unavailable"><i class="fa-solid fa-calendar-xmark"></i><span>Use a real date such as 24/09/2026.</span></div>'; return; }
     if (!doctorReference || !date) { $('#slotStatus').textContent = 'Choose a doctor and date to see live slots.'; slotsContainer.innerHTML = '<div class="slot-placeholder"><i class="fa-regular fa-calendar"></i><span>Your available times will appear here.</span></div>'; return; }
     $('#slotStatus').textContent = 'Checking live availability...';
     let availability;
@@ -142,7 +148,8 @@
 
   async function submitAppointment(event) {
     event.preventDefault();
-    const doctorReference = $('#patientDoctor').value; const date = $('#patientDate').value; const reason = $('#patientReason').value.trim();
+    const doctorReference = $('#patientDoctor').value; const date = parseDisplayDate($('#patientDate').value); const reason = $('#patientReason').value.trim();
+    if ($('#patientDate').value.trim() && !date) { showAlert('Enter the appointment date as DD/MM/YYYY.', 'error'); return; }
     if (!doctorReference || !date || !state.selectedSlot || !reason) { showAlert('Choose a doctor, date, available time, and reason before confirming.', 'error'); return; }
     const doctor = state.doctors.find((item) => String(item.doctorId || item.id || item.name) === String(doctorReference)) || state.doctors.find((item) => item.name === doctorReference);
     const payload = { doctorId: doctor?.doctorId || doctor?.id || doctorReference, date, time: state.selectedSlot, reason, patient: state.patient.patientId || account.patientId };
@@ -173,7 +180,7 @@
     const appointment = state.appointments.find((item) => String(item.id || item.appointmentId) === String(id));
     if (!appointment) return;
     if (action === 'view') { openDetails(appointment); return; }
-    if (action === 'reschedule') { state.rescheduleId = id; const doctor = state.doctors.find((item) => String(item.doctorId || item.id || item.name) === String(appointment.doctorId || appointment.doctor)); $('#patientDepartment').value = doctor?.department || appointment.department || ''; $('#patientDepartment').dispatchEvent(new Event('change')); $('#patientDate').value = String(appointment.date).slice(0, 10); setTimeout(loadAvailability, 0); document.querySelector('#book-appointment').scrollIntoView({ behavior: 'smooth' }); showAlert('Choose a new available time to reschedule this appointment.'); return; }
+    if (action === 'reschedule') { state.rescheduleId = id; const doctor = state.doctors.find((item) => String(item.doctorId || item.id || item.name) === String(appointment.doctorId || appointment.doctor)); $('#patientDepartment').value = doctor?.department || appointment.department || ''; $('#patientDepartment').dispatchEvent(new Event('change')); $('#patientDate').value = displayDate(appointment.date); setTimeout(loadAvailability, 0); document.querySelector('#book-appointment').scrollIntoView({ behavior: 'smooth' }); showAlert('Choose a new available time to reschedule this appointment.'); return; }
     if (action === 'cancel' && !window.confirm('Cancel this appointment? Its time slot will become available again.')) return;
     if (action === 'cancel') {
       try { await window.HMS_API.put(`/appointments/${encodeURIComponent(id)}/cancel`, {}); } catch (error) { if (!error.isNetworkError && !error.isBackendUnavailable) { showAlert(error.message, 'error'); return; } const updated = getRecords('appointments').map((item) => String(item.appointmentId || item.id) === String(id) ? { ...item, status: 'Cancelled' } : item); setRecords('appointments', updated); }
@@ -192,5 +199,11 @@
   }
 
   bindEvents();
+  let syncRefreshTimer;
+  window.HMS_API?.subscribeSync?.(({ key }) => {
+    if (!['hms_appointments', 'hms_doctors', 'hms_laboratory', 'hms_billing', 'hms_consultations', 'hmsActivities'].includes(key)) return;
+    clearTimeout(syncRefreshTimer);
+    syncRefreshTimer = setTimeout(() => loadPortalData(), 150);
+  });
   loadPortalData();
 })();
