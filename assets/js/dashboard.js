@@ -146,7 +146,13 @@
     if (!window.HMS_API) return false;
     try {
       await window.HMS_API.get('/dashboard');
-      for (const [name, path] of Object.entries(apiPaths)) setRecords(name, (await window.HMS_API.get(path)).map((record) => fromApiRecord(name, record)));
+      for (const [name, path] of Object.entries(apiPaths)) {
+        try {
+          setRecords(name, (await window.HMS_API.get(path)).map((record) => fromApiRecord(name, record)));
+        } catch (error) {
+          if (name !== 'emergency') throw error;
+        }
+      }
       backendAvailable = true;
       return true;
     } catch (error) {
