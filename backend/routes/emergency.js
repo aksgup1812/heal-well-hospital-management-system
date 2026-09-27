@@ -4,7 +4,7 @@ const { authorize } = require('../middleware/auth');
 const { asyncHandler, publicId } = require('./helpers');
 
 const router = express.Router();
-const select = 'SELECT id, emergency_id AS emergencyId, patient, priority, condition, phone, created_at AS createdAt FROM emergency_cases';
+const select = 'SELECT id, emergency_id AS emergencyId, patient, priority, `condition`, phone, created_at AS createdAt FROM emergency_cases';
 
 /* List emergency cases in priority order for staff. */
 router.get('/', authorize('admin', 'doctor'), asyncHandler(async (req, res) => { const [rows] = await pool.execute(`${select} ORDER BY FIELD(priority, 'High', 'Medium', 'Low'), id DESC`); res.json(rows); }));
