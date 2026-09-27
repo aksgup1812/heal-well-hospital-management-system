@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const fs = require('fs');
 const { pool, testConnection } = require('./db');
 const { authenticate } = require('./middleware/auth');
 
@@ -52,6 +53,15 @@ async function initializeDemoAccounts() {
   for (const doctor of scheduleDoctors) {
     for (const [dayOfWeek, startTime, endTime] of defaultSchedules) await pool.execute('INSERT IGNORE INTO doctor_schedules (doctor_id, day_of_week, start_time, end_time, slot_duration) VALUES (?, ?, ?, ?, ?)', [doctor.id, dayOfWeek, startTime, endTime, 30]);
   }
+}
+
+/* Create the complete schema automatically when the hosted MySQL database is new. */
+async function initializeDatabase() {
+  const schema = fs.readFileSync(path.join(__dirname, 'database.sql'), 'utf8')
+    .replace(/^CREATE DATABASE[^;]+;\s*/i, '')
+    .replace(/^USE [^;]+;\s*/i, '');
+  const statements = schema.split(/;\s*(?=CREATE TABLE)/i).map((statement) => statement.trim()).filter(Boolean);
+  for (const statement of statements) await pool.query(statement);
 }
 
 /* Apply additive schema changes when an older college-project database already exists. */
@@ -113,6 +123,7 @@ async function start() {
   const port = Number(process.env.PORT || 5000);
   try {
     await testConnection();
+    await initializeDatabase();
     await ensureSchemaUpgrades();
     await initializeDemoAccounts();
     console.log('MySQL database connected. Demo accounts are ready.');
