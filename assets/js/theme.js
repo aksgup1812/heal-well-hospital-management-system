@@ -14,7 +14,7 @@
     } catch (error) {
       // Use the system preference when browser storage is unavailable.
     }
-    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'light';
   }
 
   /* Apply the theme before the page renders and update every visible switch. */
