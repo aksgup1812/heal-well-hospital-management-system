@@ -26,6 +26,22 @@ npm start
 
 Use `npm run dev` during development. The API runs at `http://localhost:5000` and serves the parent frontend directory. On first startup it creates demo administrator, doctor, patient, doctors, schedules, and sample operational records when they do not already exist.
 
+## Doctor Demo Credentials
+
+| Doctor | Login | Password |
+| --- | --- | --- |
+| All-doctors demo | `doctor` | `doctor123` |
+| Dr. Ananya Rao | `ananya.rao` | `HealWell@1001` |
+| Dr. Vikram Mehta | `vikram.mehta` | `HealWell@1002` |
+| Dr. Neha Kapoor | `neha.kapoor` | `HealWell@1003` |
+| Dr. Rohan Iyer | `rohan.iyer` | `HealWell@1004` |
+| Dr. Meera Shah | `meera.shah` | `HealWell@1005` |
+| Dr. Arjun Malhotra | `arjun.malhotra` | `HealWell@1006` |
+| Dr. Kavya Menon | `kavya.menon` | `HealWell@1007` |
+| Dr. Sameer Patel | `sameer.patel` | `HealWell@1008` |
+
+Individual doctor accounts open the linked doctor's queue. The `doctor` account remains available for viewing all doctor bookings.
+
 ## Authentication and Roles
 
 Use the token returned by login on protected requests:
