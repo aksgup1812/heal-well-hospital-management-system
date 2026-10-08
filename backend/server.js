@@ -45,9 +45,24 @@ async function initializeDemoAccounts() {
     ['DOC-1008', 'Dr. Sameer Patel', 'Dermatology', 'MD Dermatology', 7, '9888899900']
   ];
   for (const doctor of demoDoctors) await pool.execute('INSERT IGNORE INTO doctors (doctor_id, name, department, qualification, experience, phone) VALUES (?, ?, ?, ?, ?, ?)', doctor);
-  const [doctorUser] = await pool.execute('SELECT id FROM users WHERE username = ? LIMIT 1', ['doctor']);
-  const [linkedDoctor] = await pool.execute('SELECT id FROM doctors WHERE doctor_id = ? LIMIT 1', ['DOC-1001']);
-  if (doctorUser.length && linkedDoctor.length) await pool.execute('UPDATE doctors SET user_id = ? WHERE id = ? AND (user_id IS NULL OR user_id = ?)', [doctorUser[0].id, linkedDoctor[0].id, doctorUser[0].id]);
+  const doctorCredentials = [
+    ['ananya.rao', 'HealWell@1001', 'DOC-1001'],
+    ['vikram.mehta', 'HealWell@1002', 'DOC-1002'],
+    ['neha.kapoor', 'HealWell@1003', 'DOC-1003'],
+    ['rohan.iyer', 'HealWell@1004', 'DOC-1004'],
+    ['meera.shah', 'HealWell@1005', 'DOC-1005'],
+    ['arjun.malhotra', 'HealWell@1006', 'DOC-1006'],
+    ['kavya.menon', 'HealWell@1007', 'DOC-1007'],
+    ['sameer.patel', 'HealWell@1008', 'DOC-1008']
+  ];
+  const [allDoctorsDemoUser] = await pool.execute('SELECT id FROM users WHERE username = ? LIMIT 1', ['doctor']);
+  if (allDoctorsDemoUser.length) await pool.execute('UPDATE doctors SET user_id = NULL WHERE user_id = ?', [allDoctorsDemoUser[0].id]);
+  for (const [username, password, doctorId] of doctorCredentials) {
+    const [existingUser] = await pool.execute('SELECT id FROM users WHERE username = ? LIMIT 1', [username]);
+    if (!existingUser.length) await pool.execute('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, await bcrypt.hash(password, 10), 'doctor']);
+    const [doctorUser] = await pool.execute('SELECT id FROM users WHERE username = ? LIMIT 1', [username]);
+    await pool.execute('UPDATE doctors SET user_id = ? WHERE doctor_id = ?', [doctorUser[0].id, doctorId]);
+  }
   const [scheduleDoctors] = await pool.execute('SELECT id FROM doctors');
   const defaultSchedules = [[1, '09:00:00', '13:00:00'], [1, '14:00:00', '17:00:00'], [2, '09:00:00', '13:00:00'], [2, '14:00:00', '17:00:00'], [3, '09:00:00', '13:00:00'], [3, '14:00:00', '17:00:00'], [4, '09:00:00', '13:00:00'], [4, '14:00:00', '17:00:00'], [5, '09:00:00', '13:00:00'], [5, '14:00:00', '17:00:00'], [6, '09:00:00', '12:00:00']];
   for (const doctor of scheduleDoctors) {
