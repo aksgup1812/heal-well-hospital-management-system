@@ -54,7 +54,9 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
     };
     const registeredPatients = JSON.parse(localStorage.getItem('hmsPatientAccounts') || '[]');
     const demoPatient = { password: 'patient123', name: 'Demo Patient', role: 'patient', patientId: 'PATIENT-DEMO', phone: '9999999999' };
-    account = error.isNetworkError || error.isBackendUnavailable ? (accounts[accountKey] || (normalizedPhone === demoPatient.phone ? demoPatient : registeredPatients.find((patient) => patient.phone === normalizedPhone || patient.phone === loginId))) : null;
+    const recognizedDoctorDemo = doctorDemoCredentials.some(([, username, demoPassword]) => username.toLowerCase() === accountKey && demoPassword === password) || (accountKey === 'doctor' && password === 'doctor123');
+    const canUseOfflineFallback = error.isNetworkError || error.isBackendUnavailable || (error.status === 401 && recognizedDoctorDemo);
+    account = canUseOfflineFallback ? (accounts[accountKey] || (normalizedPhone === demoPatient.phone ? demoPatient : registeredPatients.find((patient) => patient.phone === normalizedPhone || patient.phone === loginId))) : null;
   }
   if (account && (authenticatedByApi || password === account.password)) {
     localStorage.setItem('hmsLoggedIn', 'true');
