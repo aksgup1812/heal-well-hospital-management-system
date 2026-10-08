@@ -41,7 +41,8 @@ router.post('/login', asyncHandler(async (req, res) => {
   if (!users.length || !(await bcrypt.compare(String(req.body.password || ''), users[0].password))) return res.status(401).json({ message: 'Invalid credentials.' });
   const user = users[0];
   const [patients] = user.role === 'patient' ? await pool.execute('SELECT patient_id, name, phone FROM patients WHERE user_id = ?', [user.id]) : [[]];
-  res.json({ token: createToken(user), user: { id: user.id, username: user.username, role: user.role, name: patients[0]?.name || user.username, patientId: patients[0]?.patient_id || null, phone: patients[0]?.phone || null } });
+  const [doctors] = user.role === 'doctor' ? await pool.execute('SELECT doctor_id, name, department, qualification, experience FROM doctors WHERE user_id = ?', [user.id]) : [[]];
+  res.json({ token: createToken(user), user: { id: user.id, username: user.username, role: user.role, name: patients[0]?.name || doctors[0]?.name || user.username, patientId: patients[0]?.patient_id || null, phone: patients[0]?.phone || null, doctorId: doctors[0]?.doctor_id || null, department: doctors[0]?.department || null } });
 }));
 
 /* Return the authenticated account and linked patient profile when present. */
