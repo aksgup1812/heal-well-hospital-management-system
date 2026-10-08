@@ -8,7 +8,8 @@ router.use(authorize('doctor'));
 
 /* Resolve the authenticated doctor's linked clinical profile. */
 async function getDoctor(req) {
-  const [rows] = await pool.execute('SELECT * FROM doctors WHERE user_id = ? OR doctor_id = ? LIMIT 1', [req.user.id, req.user.username]);
+  const doctorReference = req.user.username === 'doctor' ? 'DOC-1001' : req.user.username;
+  const [rows] = await pool.execute('SELECT * FROM doctors WHERE user_id = ? OR doctor_id = ? LIMIT 1', [req.user.id, doctorReference]);
   return rows[0] || null;
 }
 function seesAllBookings(req) { return req.user.username === 'doctor'; }
