@@ -16,7 +16,8 @@ async function authenticate(req, res, next) {
       req.user.patient = patients[0] || null;
     }
     if (req.user.role === 'doctor') {
-      const [doctors] = await pool.execute('SELECT id, doctor_id, name, department, qualification, experience FROM doctors WHERE user_id = ? OR doctor_id = ? LIMIT 1', [req.user.id, req.user.username]);
+      const doctorReference = req.user.username === 'doctor' ? 'DOC-1001' : req.user.username;
+      const [doctors] = await pool.execute('SELECT id, doctor_id, name, department, qualification, experience FROM doctors WHERE user_id = ? OR doctor_id = ? LIMIT 1', [req.user.id, doctorReference]);
       req.user.doctor = doctors[0] || null;
     }
     next();
